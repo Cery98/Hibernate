@@ -8,31 +8,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class UserDaoJDBCImpl implements UserDao {
+
+
     public UserDaoJDBCImpl() {
 
     }
-    String create = """ 
-CREATE TABLE IF NOT EXISTS users
-(id INT PRIMARY KEY AUTO_INCREMENT,
- name TEXT, surname TEXT, age INT)
-""";
-    String drop = "DROP TABLE IF EXISTS users";
 
-    String select = "SELECT * FROM users";
+    private String create = """ 
+            CREATE TABLE IF NOT EXISTS users
+            (id INT PRIMARY KEY AUTO_INCREMENT,
+             name TEXT, surname TEXT, age INT)
+            """;
+    private String drop = "DROP TABLE IF EXISTS users";
+    private String save = """
+            INSERT INTO users (name, surname, age) values (?,?,? )
+             """;
+    private String remove = "DELETE FROM users WHERE id = ?";
 
-    String save = """
-               INSERT INTO users (name, surname, age) values (?,?,? )
-                """;
-    String remove = "DELETE FROM users WHERE id = ?";
-
-    String deleteTable = "DELETE FROM users";
+    private String select = "SELECT id, name, surname, age FROM users";
+    private String deleteTable = "TRUNCATE users";
+    private static Connection connection = Util.connection();
 
 
     public void createUsersTable() {
-        try(Connection connection = Util.connection();
-            Statement statement = connection.createStatement()){
 
-            statement.execute(create);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(create)) {
+            preparedStatement.execute();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -40,10 +41,9 @@ CREATE TABLE IF NOT EXISTS users
     }
 
     public void dropUsersTable() {
-        try(Connection connection = Util.connection();
-        Statement statement = connection.createStatement()) {
 
-            statement.execute(drop);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(drop)) {
+            preparedStatement.execute();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -51,13 +51,13 @@ CREATE TABLE IF NOT EXISTS users
     }
 
     public void saveUser(String name, String lastName, byte age) {
-        try(Connection connection = Util.connection();
-            PreparedStatement statement = connection.prepareStatement(save)) {
 
-            statement.setString(1, name);
-            statement.setString(2, lastName);
-            statement.setInt(3, age);
-            statement.executeUpdate();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(save)) {
+
+            preparedStatement.setString(1, name);
+            preparedStatement.setString(2, lastName);
+            preparedStatement.setInt(3, age);
+            preparedStatement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -66,11 +66,10 @@ CREATE TABLE IF NOT EXISTS users
 
     public void removeUserById(long id) {
 
-        try(Connection connection = Util.connection();
-            PreparedStatement statement = connection.prepareStatement(remove)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(remove)) {
 
-            statement.setLong(1,id);
-            statement.executeUpdate();
+            preparedStatement.setLong(1, id);
+            preparedStatement.executeUpdate();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -78,14 +77,15 @@ CREATE TABLE IF NOT EXISTS users
     }
 
     public List<User> getAllUsers() {
-        List<User> userList = new ArrayList<>();
-        User user = new User();
-        try (Connection connection = Util.connection();
-             Statement statement = connection.createStatement()) {
 
-            ResultSet rs = statement.executeQuery(select);
+        List<User> userList = new ArrayList<>();
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(select)) {
+
+            ResultSet rs = preparedStatement.executeQuery(select);
 
             while (rs.next()) {
+                User user = new User();
                 user.setId(rs.getLong("id"));
                 user.setName(rs.getString("name"));
                 user.setLastName(rs.getString("surname"));
@@ -96,15 +96,15 @@ CREATE TABLE IF NOT EXISTS users
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        System.out.println(userList);
+
         return userList;
     }
 
     public void cleanUsersTable() {
-        try(Connection connection = Util.connection();
-            Statement statement = connection.createStatement()) {
 
-            statement.execute(deleteTable);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(deleteTable)) {
+
+            preparedStatement.execute();
 
         } catch (SQLException e) {
             throw new RuntimeException(e);

@@ -11,8 +11,6 @@ private static final String URL = "jdbc:mysql://localhost:3306/new_db";
 
 
 
-
-
 public static Connection connection() {
 
     Connection connection = null;
