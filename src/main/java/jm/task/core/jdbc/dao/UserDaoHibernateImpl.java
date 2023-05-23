@@ -5,9 +5,7 @@ import jm.task.core.jdbc.util.Util;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.cfg.Configuration;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,19 +24,21 @@ public class UserDaoHibernateImpl implements UserDao {
 
 
     private static SessionFactory sessionFactory = Util.getSessionFactory();
-
+    private Transaction transaction;
 
     @Override
     public void createUsersTable() {
 
         try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
 
-            session.beginTransaction();
             session.createSQLQuery(create).executeUpdate();
-            session.getTransaction().commit();
+            transaction.commit();
 
         } catch (RuntimeException e) {
             e.printStackTrace();
+            transaction.rollback();
+
         }
 
     }
@@ -46,13 +46,14 @@ public class UserDaoHibernateImpl implements UserDao {
     @Override
     public void dropUsersTable() {
         try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
 
-            session.beginTransaction();
             session.createSQLQuery(drop).executeUpdate();
-            session.getTransaction().commit();
+            transaction.commit();
 
         } catch (RuntimeException e) {
             e.printStackTrace();
+            transaction.rollback();
         }
 
     }
@@ -60,32 +61,33 @@ public class UserDaoHibernateImpl implements UserDao {
     @Override
     public void saveUser(String name, String lastName, byte age) {
         try (Session session = sessionFactory.openSession()) {
-            session.beginTransaction();
+            transaction = session.beginTransaction();
 
             User user = new User();
             user.setName(name);
             user.setLastName(lastName);
             user.setAge(age);
             session.save(user);
-            session.getTransaction().commit();
+            transaction.commit();
 
         } catch (RuntimeException e) {
             e.printStackTrace();
-
+            transaction.rollback();
         }
     }
 
     @Override
     public void removeUserById(long id) {
         try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
 
-            session.beginTransaction();
             User user = session.get(User.class, id);
             session.delete(user);
             session.getTransaction().commit();
 
         } catch (RuntimeException e) {
             e.printStackTrace();
+            transaction.rollback();
         }
     }
 
@@ -95,13 +97,14 @@ public class UserDaoHibernateImpl implements UserDao {
         List<User> userList = new ArrayList<>();
 
         try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
 
-            session.beginTransaction();
             userList = session.createQuery("from User").getResultList();
-            session.getTransaction().commit();
+            transaction.commit();
 
         } catch (RuntimeException e) {
             e.printStackTrace();
+            transaction.rollback();
         }
 
         return userList;
@@ -110,13 +113,14 @@ public class UserDaoHibernateImpl implements UserDao {
     @Override
     public void cleanUsersTable() {
         try (Session session = sessionFactory.openSession()) {
+            transaction = session.beginTransaction();
 
-            session.beginTransaction();
             session.createSQLQuery(deleteTable).executeUpdate();
-            session.getTransaction().commit();
+            transaction.commit();
 
         } catch (RuntimeException e) {
             e.printStackTrace();
+            transaction.rollback();
         }
 
     }
